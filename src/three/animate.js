@@ -3,6 +3,7 @@ import SceneModule from './sceneModule'
 import CameraModule from './CameraModule'
 import ControlsModule from './ControlsModule'
 import * as THREE from 'three'
+import composerModule from './composerModule'
 class Animate{
     constructor(){
        this.fns=[]
@@ -16,7 +17,9 @@ class Animate{
         const animate= ()=>{
             const elapsedTime= clock.getElapsedTime()
             const deltaTime=clock.getDelta()
-            rendererModule.renderer.render(SceneModule.scene,CameraModule.activeCamera)
+            // rendererModule.renderer.render(SceneModule.scene,CameraModule.activeCamera)
+            //更新后期效果
+            composerModule.composer.render()
             rendererModule.labelRenderer.render(SceneModule.scene,CameraModule.activeCamera)
 
             ControlsModule.controls.update()

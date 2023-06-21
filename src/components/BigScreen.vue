@@ -65,7 +65,9 @@
     </header>
     <main>
         <div class="showhandles">
-            <div class="handle-item">
+  
+    
+            <div class="handle-item" @click="toggleMonitor">
                 <img src="@/assets/icons/shexiangtou.svg" alt="">
             </div>
             <div class="handle-item">
@@ -74,7 +76,7 @@
             <div class="handle-item">
                 <img src="@/assets/icons/miehuoqi.svg" alt="">
             </div>
-            <div class="handle-item">
+            <div class="handle-item" @click="toggleLight">
                 <img src="@/assets/icons/ludeng.svg" alt="">
             </div>
         </div>
@@ -147,8 +149,17 @@ onMounted(()=>{
   eventHub.on('getHour',(value)=>{
     hour.count=parseInt(value)
   })
+  
 
 })
+const toggleMonitor=()=>{
+
+  eventHub.emit('toggleMonitor')
+}
+const toggleLight=()=>{
+
+eventHub.emit('toggleLight')
+}
 
 
 </script>
@@ -201,6 +212,7 @@ onMounted(()=>{
   padding: 20px;
   overflow: hidden;
   box-sizing: border-box;
+  z-index: 100;
   .block-container {
     pointer-events: all;
     display: flex;
@@ -237,8 +249,18 @@ onMounted(()=>{
         position:fixed;
         top:205px;
         right:630px;
-        z-index: 20;
+        z-index: 50;
+        .button-item{
+          background: rgba(0,0,0,0.5);
+          padding:5px;
+          margin-bottom:30px;
+          pointer-events: all;
+          cursor: pointer;
+          text-align: center;
+          border-radius: 5px;
+        }
         .handle-item{
+      
             pointer-events: all;
             background: rgba(0,0,0,0.5);
             border-radius: 50%;

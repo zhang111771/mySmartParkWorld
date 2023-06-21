@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import {CSS2DRenderer} from 'three/examples/jsm/renderers/CSS2DRenderer'
+
 class Renderer{
     constructor(){
         this.renderer=new THREE.WebGLRenderer({antialias:true})
@@ -14,6 +15,7 @@ class Renderer{
         this.labelRenderer.domElement.style.top = '0px';
         this.labelRenderer.domElement.style.left = '0px';
         this.labelRenderer.domElement.style.zIndex = '10';
+        
     }
 }
 export default new Renderer()
