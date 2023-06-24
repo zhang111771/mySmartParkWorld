@@ -9,7 +9,7 @@ void main(){
   if(toTopLineMix>0.0){
     gl_FragColor=mix(gl_FragColor,vec4(uColor,1),toTopLineMix/uToTopLineWidth);
   }else{
-    gl_FragColor=vec4(0.5,0.5,0.5,1);
+    gl_FragColor=vec4(1,0,0,1);
   }
 
 }

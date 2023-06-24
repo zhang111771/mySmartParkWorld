@@ -5,28 +5,28 @@
       <div class="num-info-item">
         <img src="../assets//icons/users.svg" alt="" />
         <div class="info-right">
-          <div class="num">3666</div>
+          <div class="num">{{ personTotal }}</div>
           <div class="label">总人数</div>
         </div>
       </div>
       <div class="num-info-item">
         <img src="../assets//icons/car2.svg" alt="" />
         <div class="info-right">
-          <div class="num">300</div>
+          <div class="num">{{ carTotal }}</div>
           <div class="label">总车辆数</div>
         </div>
       </div>
       <div class="num-info-item">
         <img src="../assets//icons/tingche.svg" alt="" />
         <div class="info-right">
-          <div class="num">100</div>
+          <div class="num">{{ carPosition }}</div>
           <div class="label">剩余车位数</div>
         </div>
       </div>
       <div class="num-info-item">
         <img src="../assets//icons/yichang.svg" alt="" />
         <div class="info-right">
-          <div class="num">20</div>
+          <div class="num">{{ abnormalEq }}</div>
           <div class="label">异常设备数</div>
         </div>
       </div>
@@ -132,7 +132,7 @@
           <div class="pieCharts-outer">
             <div class="pie-center">
               <img src="@/assets/icons/users.svg" alt="" />
-              <div class="total-num">555</div>
+              <div class="total-num">{{ personTotal }}</div>
               <div class="total-label">总人数</div>
             </div>
             <div class="pieCharts-container" ref="pieChartsEle"></div>
@@ -141,33 +141,42 @@
             <div class="tongji-item">
               <div class="tongji-top">
                 <span class="top-left">车辆总数</span>
-                <span class="top-right">358</span>
+                <span class="top-right">{{ carTotal }}</span>
               </div>
               <div class="tongji-bottom">
                 <div class="tongji-container">
-                  <div class="tongji-bar bar1" style="width: 80%"></div>
+                  <div
+                    class="tongji-bar bar1"
+                    :style="{ width: (carTotal / 300) * 100 + '%' }"
+                  ></div>
                 </div>
               </div>
             </div>
             <div class="tongji-item">
               <div class="tongji-top">
                 <span class="top-left">月卡车辆</span>
-                <span class="top-right">358</span>
+                <span class="top-right">{{ moonCar }}</span>
               </div>
               <div class="tongji-bottom">
                 <div class="tongji-container">
-                  <div class="tongji-bar bar2" style="width: 30%"></div>
+                  <div
+                    class="tongji-bar bar2"
+                    :style="{ width: (moonCar / 100) * 100 + '%' }"
+                  ></div>
                 </div>
               </div>
             </div>
             <div class="tongji-item">
               <div class="tongji-top">
                 <span class="top-left">临时车辆</span>
-                <span class="top-right">358</span>
+                <span class="top-right">{{ tempCar }}</span>
               </div>
               <div class="tongji-bottom">
                 <div class="tongji-container">
-                  <div class="tongji-bar bar3" style="width: 50%"></div>
+                  <div
+                    class="tongji-bar bar3"
+                    :style="{ width: (tempCar / 200) * 100 + '%' }"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -234,7 +243,7 @@
         <div class="pieCharts-outer">
           <div class="pie-center">
             <img src="@/assets/icons/users.svg" alt="" />
-            <div class="total-num">555</div>
+            <div class="total-num">{{ abnormalEq }}</div>
             <div class="total-label">总数</div>
           </div>
           <div class="pieCharts-container" ref="pieChartsEle2"></div>
@@ -242,15 +251,15 @@
         <div class="warn-list">
           <div class="warn-item">
             <span class="warn-label">报警</span>
-            <span class="warn-num">5</span>
+            <span class="warn-num">{{ alarmNum }}</span>
           </div>
           <div class="warn-item">
             <span class="warn-label">误报</span>
-            <span class="warn-num">20</span>
+            <span class="warn-num">{{ falseReportNum }}</span>
           </div>
           <div class="warn-item">
             <span class="warn-label">测试</span>
-            <span class="warn-num">14</span>
+            <span class="warn-num">{{ testNum }}</span>
           </div>
         </div>
       </div>
@@ -260,7 +269,7 @@
           园区产业分布
         </div>
         <div class="item-body">
-            <div class="bar-charts" ref="barCharts"></div>
+          <div class="bar-charts" ref="barCharts"></div>
         </div>
       </div>
       <div class="chart-item right-item">
@@ -269,24 +278,149 @@
           新入驻企业
         </div>
         <div class="item-body">
-            <div class="bar-charts" ref="lineBar"></div>
+          <div class="bar-charts" ref="lineBar"></div>
         </div>
       </div>
     </div>
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
-import { pieCharts,barRowCharts,lineBarCharts } from "@/utils/echarts";
+import { ref, onMounted, reactive } from "vue";
+import { pieCharts, barRowCharts, lineBarCharts } from "@/utils/echarts";
+import gsap from "gsap";
+import eventHub from "@/utils/eventHub";
+import { randomNumGsap } from "@/utils/utils";
 const pieChartsEle = ref(null);
 const pieChartsEle2 = ref(null);
 const barCharts = ref(null);
 const lineBar = ref(null);
-
-
+//总人数
+let personTotal = ref(0);
+//总车辆
+let carTotal = ref(0);
+//剩余车位
+let carPosition = ref(0);
+//异常设备数
+let abnormalEq = ref(0);
+let hour = ref(0);
+//访客统计
+let visitorPie = ref(null);
+//警告统计
+let warnPie = ref(null);
+//
+let barRow = ref(null);
+let linecharts = ref(null);
+//月卡车辆
+let moonCar = ref(0);
+//临时车辆
+let tempCar = ref(0);
+//报警
+let alarmNum = ref(0);
+//误报
+let falseReportNum = ref(0);
+//测试
+let testNum = ref(0);
 
 onMounted(() => {
-  pieCharts(pieChartsEle.value, [
+  eventHub.on("getHour", (time) => {
+    hour.value = Math.floor(time);
+    if (hour.value % 6 == 0) {
+      randomNumGsap(personTotal, 1000);
+      randomNumGsap(carTotal, 300);
+      randomNumGsap(carPosition, 300);
+      randomNumGsap(alarmNum, 10);
+      randomNumGsap(falseReportNum, 20);
+      randomNumGsap(testNum, 15);
+
+      updateCharts(visitorPie, [
+        {
+          value: Math.random() * 100,
+          name: "员工",
+          itemStyle: {
+            color: "#1cbfc9",
+          },
+        },
+        {
+          value: Math.random() * 1000,
+          name: "访客",
+          itemStyle: {
+            color: "#7cf6e1",
+          },
+        },
+        {
+          value: Math.random() * 50,
+          name: "安保",
+          itemStyle: {
+            color: "#41afe7",
+          },
+        },
+      ]);
+      updateCharts(warnPie, [
+        {
+          value: Math.random() * 15,
+          name: "未确认",
+          itemStyle: {
+            color: "#7cf6e1",
+          },
+        },
+        {
+          value: Math.random() * 20,
+          name: "已确认",
+          itemStyle: {
+            color: "#41afe7",
+          },
+        },
+      ]);
+      updateCharts(barRow, [
+        { name: "商务服务", value: Math.floor(Math.random() * 20) },
+        { name: "科研服务", value: Math.floor(Math.random() * 20) },
+        { name: "信息技术",value: Math.floor(Math.random() * 20) },
+        { name: "批发零售",value: Math.floor(Math.random() * 20) },
+        { name: "制造业", value: Math.floor(Math.random() * 20) },
+        { name: "仓储运输", value: Math.floor(Math.random() * 20) },
+        { name: "房地产业", value: Math.floor(Math.random() * 20) },
+        { name: "问题娱乐", value: Math.floor(Math.random() * 20) },
+        { name: "金融业", value: Math.floor(Math.random() * 20) },
+      ],'barRowCharts');
+      updateCharts(linecharts, [
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      ]);
+      randomNumGsap(moonCar, 100);
+      randomNumGsap(tempCar, 200);
+    }
+    if (hour.value % 4 == 0) {
+      randomNumGsap(abnormalEq, 10);
+    }
+  });
+  //更新echarts
+  function updateCharts(charts, data,chartsType) {
+    const option = charts.value.getOption();
+
+    option.series.forEach((item)=>{
+      item.data=data
+    })
+    if(chartsType==='barRowCharts'){
+      let axisArray=data.map((item)=>{
+        return item.value
+      })
+      option.yAxis[1].data=axisArray
+    }
+    charts.value.setOption(option);
+  }
+
+
+  visitorPie.value = pieCharts(pieChartsEle.value, [
     {
       value: 335,
       name: "员工",
@@ -309,42 +443,48 @@ onMounted(() => {
       },
     },
   ]);
-  pieCharts(pieChartsEle2.value,
-  [
-            {
-              value: 10,
-              name: '未确认',
-              itemStyle:{
-                color:'#7cf6e1',
-               
-              }
-            },
-            {
-              value: 22,
-              name: '已确认',
-              itemStyle:{
-                color:'#41afe7',
-              
-              }
-            }
-
-          ]
-  );
-  let barData=[
-  {name:'商务服务',value:7},
-  {name:'科研服务',value:8},
-  {name:'信息技术',value:7},
-  {name:'批发零售',value:4},
-  {name:'制造业',value:5},
-  {name:'仓储运输',value:10},
-  {name:'房地产业',value:2},
-  {name:'问题娱乐',value:9},
-  {name:'金融业',value:5},
+  warnPie.value = pieCharts(pieChartsEle2.value, [
+    {
+      value: 10,
+      name: "未确认",
+      itemStyle: {
+        color: "#7cf6e1",
+      },
+    },
+    {
+      value: 22,
+      name: "已确认",
+      itemStyle: {
+        color: "#41afe7",
+      },
+    },
+  ]);
+  let barData = [{ name: "商务服务", value: Math.floor(Math.random() * 20) },
+        { name: "科研服务", value: Math.floor(Math.random() * 20) },
+        { name: "信息技术",value: Math.floor(Math.random() * 20) },
+        { name: "批发零售",value: Math.floor(Math.random() * 20) },
+        { name: "制造业", value: Math.floor(Math.random() * 20) },
+        { name: "仓储运输", value: Math.floor(Math.random() * 20) },
+        { name: "房地产业", value: Math.floor(Math.random() * 20) },
+        { name: "问题娱乐", value: Math.floor(Math.random() * 20) },
+        { name: "金融业", value: Math.floor(Math.random() * 20) },
+      ]
+  let lineBarData=[
+  Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
+      Math.floor(Math.random() * 10),
   ]
-   
-  
-  barRowCharts(barCharts.value,barData)
-  lineBarCharts(lineBar.value)
+  barRow.value = barRowCharts(barCharts.value, barData);
+  linecharts.value = lineBarCharts(lineBar.value,lineBarData);
 });
 </script>
 <style lang="scss" scoped>
@@ -353,8 +493,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
 
-  .bar-charts{
-    height: 150px;
+  .bar-charts {
+    height: 250px;
   }
   .warn-list {
     display: flex;
@@ -372,10 +512,10 @@ onMounted(() => {
     flex-wrap: wrap;
     justify-content: space-between;
     .peitao-item {
-      width: 105px;
-      padding: 5px 5px;
+      width: 135px;
+      padding: 15px 5px;
       box-sizing: border-box;
-      margin-bottom:10px;
+      margin-bottom: 10px;
       background: linear-gradient(
         to bottom,
         rgba(255, 255, 255, 0),
@@ -435,7 +575,7 @@ onMounted(() => {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      left: 46px;
+      left: 75px;
       line-height: 15px;
       text-align: center;
       color: #fff;
@@ -446,30 +586,30 @@ onMounted(() => {
     }
 
     .pieCharts-container {
-      width: 220px;
-      height: 100px;
+      width: 100%;
+      height: 150px;
     }
   }
   .num-info {
-    padding-top: 40px;
+    padding-top: 140px;
     .num-info-item {
       color: #bac2d0;
-      margin-bottom: 30px;
+      margin-bottom: 115px;
       display: flex;
       .label {
       }
       .num {
-        font-size: 20px;
+        font-size: 30px;
         color: #efefef;
       }
       img {
-        width: 40px;
+        width: 60px;
+        margin-right: 10px;
       }
     }
   }
   .chart-container {
- 
-    width: 622px;
+    width: 750px;
     pointer-events: all;
     background: linear-gradient(
       to right,
@@ -481,20 +621,20 @@ onMounted(() => {
     right: 0;
     bottom: 0;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-content: start;
     padding: 20px;
-    padding-top:100px;
+    padding-top: 100px;
     flex-wrap: wrap;
   }
   .chart-item {
     height: auto;
-    margin-bottom:30px;
+    margin-bottom: 15px;
     &.left-item {
-      width: 328px;
+      width: 415px;
     }
     &.right-item {
-      width: 220px;
+      width: 310px;
     }
     .item-title {
       color: #bac2d0;
@@ -509,18 +649,18 @@ onMounted(() => {
     .item-body {
       .park-info {
         display: flex;
-        margin-bottom:20px;
+        margin-bottom: 20px;
         .info-let {
           img {
-            width: 132px;
-            height: 100px;
+            width: 160px;
+            height: 118px;
           }
         }
         .info-right {
           margin-left: 7px;
           .info-item {
             font-size: 13px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             line-height: 13px;
             &.right-item {
               width: 258px;
@@ -538,15 +678,15 @@ onMounted(() => {
   }
   .num-info-container {
     display: flex;
-    width: 328px;
+    width: 100%;
     flex-wrap: wrap;
     justify-content: space-between;
     .num-info-item {
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
-      width: 105px;
-      padding: 5px 5px;
+      margin-bottom: 30px;
+      width: 135px;
+      padding: 15px 5px;
       box-sizing: border-box;
       background: linear-gradient(
         to bottom,

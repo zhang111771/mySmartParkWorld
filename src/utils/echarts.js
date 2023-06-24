@@ -143,13 +143,13 @@ export function barRowCharts(element,data){
                         }]),
                     },
                 },
-                barWidth: 5,
+                barWidth: 10,
                 data:valueData
             },
             {
                 name: '背景',
                 type: 'bar',
-                barWidth: 5,
+                barWidth: 10,
                 barGap: '-100%',
                 data:  valueData,
                 itemStyle: {
@@ -166,7 +166,6 @@ export function barRowCharts(element,data){
    }
    export function lineBarCharts(element,data){
     let barchart=echarts.init(element)
-    console.log(barchart)
     let option = {
 
     
@@ -262,12 +261,12 @@ export function barRowCharts(element,data){
                areaStyle:{
                    color: "rgba(5,140,255, 0.2)"
                },
-               data: [10, 14, 13, 8, 9, 18, 2, 5, 9, 18, 2, 5]
+               data: data
            },
            {
                name: "主营业务",
                type: "bar",
-               barWidth: 3,
+               barWidth: 10,
                itemStyle: {
                    normal: {
                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
@@ -281,7 +280,7 @@ export function barRowCharts(element,data){
                        ])
                    }
                },
-               data: [10, 14, 13, 8, 9, 18, 2, 5, 9, 18, 2, 5]
+               data: data
            }
        ]
    };

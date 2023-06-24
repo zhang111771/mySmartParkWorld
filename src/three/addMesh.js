@@ -18,8 +18,10 @@ import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import rayCaster from "./rayCaster";
 import { getMouseXY } from "../utils/utils";
 import composerModule from "./composerModule";
-import { floorInfos } from "../data/info";
+import { floorInfos, lightInfos, monitorInfos } from "../data/info";
 import MeshLine from "./meshLine";
+import { env } from "echarts/core";
+
 class AddMesh {
   constructor() {
     this.textureLoader = new THREE.TextureLoader();
@@ -33,13 +35,18 @@ class AddMesh {
     this.addSceneBackground();
     this.addLight();
     this.addWeahterPanel();
+    this.addPersons();
 
-    let timeout = setTimeout(() => {
-      this.randomWeather();
-      let interval = setInterval(() => {
+    this.hour = -1;
+    this.randomWeather();
+    eventHub.on("getHour", (hour) => {
+      this.hour++;
+      if (this.hour === 6) {
         this.randomWeather();
-      }, 24000);
-    }, 6000);
+      }
+
+      this.hour == 24 && (this.hour = 0);
+    });
     //清除楼栋信息
     eventHub.on("clearFloorTags", () => {
       this.clearInfoTags();
@@ -54,8 +61,13 @@ class AddMesh {
         item.visible = !item.visible;
       });
     });
+    eventHub.on("togglePersons", () => {
+      this.personsTags.forEach((item) => {
+        item.visible = !item.visible;
+      });
+    });
     //线框模型集合
-    this.meshLines=[]
+    this.meshLines = [];
   }
   randomWeather() {
     const weatherArr = ["晴天", "雨天", "下雪", "有雾"];
@@ -85,24 +97,25 @@ class AddMesh {
     //控制路灯开关
     eventHub.on("getHour", (hour) => {
       if (Math.abs(hour - 12) <= 6) {
-
-
-        this.meshLines.forEach((item)=>{
-          item.visible=false
-        })
+        this.meshLines.forEach((item) => {
+          item.visible = false;
+        });
         this.lightMeshes.forEach((item) => {
           item.children[2].intensity = 0;
-          
+        });
+        this.floors.forEach((item) => {
+          item.isMesh && (item.material.opacity = 1);
         });
       } else {
-        this.meshLines.forEach((item)=>{
-          item.visible=true
-        })
-        
+        this.floors.forEach((item) => {
+          item.isMesh && (item.material.opacity = 0.7);
+        });
+        this.meshLines.forEach((item) => {
+          item.visible = true;
+        });
+
         this.lightMeshes.forEach((item) => {
           item.children[2].intensity = 0.7;
-          
-
         });
       }
     });
@@ -114,22 +127,42 @@ class AddMesh {
   addCity() {
     this.actions = [];
     //楼栋
-    let floors = [];
+    this.floors = [];
     //楼栋信息标签
     this.infoTags = [];
     //路灯点光源
     this.lightMeshes = [];
-    //路灯信息标签
+    //路灯标签
     this.lightTags = [];
+    //路灯信息标签
+    this.lightInfoTags = [];
+    //监控信息标签
+    this.monitorInfoTags = [];
     //路灯物体集合
     this.rayCasterLights = [];
     //监控信息标签
     this.monitorTags = [];
     //监控物体集合
     this.monitorMeshes = [];
+    //人物轨迹集合
+    this.wayLines=[]
+    //人物信息集合
+    this.personInfoObj=[]
     const floorInfoData = floorInfos();
+    //路灯信息数据
+    const lightInfoData = lightInfos();
+    //监控信息数据
+    const monitorInfoData = monitorInfos();
+
     this.gltfLoader.load("./model/smartPark2.glb", (gltf) => {
       console.log(gltf.scene);
+      console.log(CameraModule);
+      gsap.to(CameraModule.activeCamera.position, {
+        x: -400,
+        y: 50,
+        z: -100,
+        duration: 2,
+      });
       gltf.scene.traverse((child) => {
         if (child.name.indexOf("栋") != -1) {
           let maxY;
@@ -137,14 +170,14 @@ class AddMesh {
             //计算建筑最高点
             child.geometry.computeBoundingBox();
             maxY = child.geometry.boundingBox.max.y;
-            let meshLine=new MeshLine(child.geometry)
-            console.log(this.meshLine)
-            const size=child.scale.x*1.01
-            meshLine.mesh.scale.set(size,size,size)
-            meshLine.mesh.position.copy(child.position)
-            meshLine.mesh.rotation.copy(child.rotation)
-            this.meshLines.push(meshLine.mesh)
-            this.scene.add(meshLine.mesh)
+            let meshLine = new MeshLine(child.geometry);
+            const size = child.scale.x * 1.01;
+            meshLine.mesh.scale.set(size, size, size);
+            meshLine.mesh.position.copy(child.position);
+            meshLine.mesh.rotation.copy(child.rotation);
+            this.meshLines.push(meshLine.mesh);
+            this.scene.add(meshLine.mesh);
+            child.material.transparent = true;
           } else {
             child.children[1].geometry.computeBoundingBox();
             maxY = child.children[1].geometry.boundingBox.max.y;
@@ -158,7 +191,7 @@ class AddMesh {
           floorLable.position.set(0, maxY + 5, 0);
 
           child.add(floorLable);
-          floors.push(child);
+          this.floors.push(child);
         }
         if (child.name.indexOf("路灯") != -1) {
           let maxY;
@@ -194,58 +227,123 @@ class AddMesh {
           monitorDiv.className = "monitorTag";
           // monitorDiv.innerHTML = child.name;
           const monitorInfo = new CSS2DObject(monitorDiv);
-          monitorInfo.position.set(0, maxY + 5, 0);
+          monitorInfo.position.set(0, maxY + 2, 0);
           monitorInfo.visible = false;
           child.add(monitorInfo);
           this.monitorTags.push(monitorInfo);
           this.monitorMeshes.push(child.children[1]);
         }
       });
-      window.addEventListener("click", (event) => {
-        this.clearInfoTags();
-        let mouse = getMouseXY(event);
-        //射线检测
-        let getIntersectObjects = rayCaster.getIntersectObjects(mouse, [
-          ...floors,
-          ...this.rayCasterLights,
-          ...this.monitorMeshes,
-        ]);
+      window.addEventListener(
+        "click",
+        (event) => {
+          this.clearInfoTags();
+          let mouse = getMouseXY(event);
+          //射线检测
+          let getIntersectObjects = rayCaster.getIntersectObjects(mouse, [
+            ...this.floors,
+            ...this.rayCasterLights,
+            ...this.monitorMeshes,
+            ...this.lightInfoTags,
+          ]);
 
-        if (getIntersectObjects.length > 0) {
-          console.log(getIntersectObjects);
-          let object = getIntersectObjects[0].object;
-          const maxY = object.geometry.boundingBox.max.y;
-          composerModule.outlineEffect.selection.set([object]);
-          composerModule.bloomEffect.selection.set([object]);
+          if (getIntersectObjects.length > 0) {
+            let object = getIntersectObjects[0].object;
 
-          let info = floorInfoData[object.name];
-          if (info) {
-            //添加楼层信息标签
-            const infoDiv = document.createElement("div");
-            infoDiv.className = "infoTag";
-            infoDiv.innerHTML = `
+            const maxY = object.geometry.boundingBox.max.y;
+            composerModule.outlineEffect.selection.set([object]);
+            composerModule.bloomEffect.selection.set([object]);
+
+            let floorInfo = floorInfoData[object.name];
+            if (floorInfo) {
+              //添加楼层信息标签
+              const infoDiv = document.createElement("div");
+              infoDiv.className = "infoTag";
+              infoDiv.innerHTML = `
 
                 <div class="info-item">
-                <span class="info-label">租金：</span><span>${info.rent}</span>         
+                <span class="info-label">租金：</span><span>${floorInfo.rent}</span>         
                 </div>
                 <div class="info-item">
-                <span class="info-label">保安：</span><span>${info.baoan}</span>
+                <span class="info-label">保安：</span><span>${floorInfo.baoan}</span>
                 </div>
                 <div class="info-item">
-                <span class="info-label">物管：</span><span>${info.wuguan}</span>
+                <span class="info-label">物管：</span><span>${floorInfo.wuguan}</span>
                 </div> <div class="info-item">
-                <span class="info-label">电话：</span><span>${info.tel}</span>
+                <span class="info-label">电话：</span><span>${floorInfo.tel}</span>
                 </div>
               
                 
                 `;
-            const floorTag = new CSS2DObject(infoDiv);
-            floorTag.position.set(10, maxY + 12, 0);
-            this.infoTags.push(floorTag);
-            object.add(floorTag);
+              const floorTag = new CSS2DObject(infoDiv);
+              floorTag.position.set(10, maxY + 12, 0);
+              this.infoTags.push(floorTag);
+              object.add(floorTag);
+            }
+
+            let monitorInfo = monitorInfoData[object.name];
+
+            if (monitorInfo) {
+              console.log(monitorInfo);
+              //添加监控信息标签
+              const infoDiv = document.createElement("div");
+
+              infoDiv.className = "infoTag";
+              infoDiv.innerHTML = `
+                  <div class="info-item">
+                  <span class="info-label">设备名称：</span><span>${object.name}</span>         
+                  </div>
+                  <div class="info-item">
+                  <span class="info-label">设备位置：</span><span>${monitorInfo.eqPosition}</span>         
+                  </div>
+                  <div class="info-item">
+                  <span class="info-label">设备功率：</span><span>${monitorInfo.eqPower}</span>
+                  </div>
+                  <div class="info-item">
+                  <span class="info-label">设备状态：</span><span>${monitorInfo.eqState}</span>
+                </div>
+
+                  
+                  `;
+
+              const monitorTag = new CSS2DObject(infoDiv);
+              monitorTag.position.set(0, maxY + 5, 0);
+              this.monitorInfoTags.push(monitorTag);
+              object.add(monitorTag);
+            }
+            let lightInfo = lightInfoData[object.name];
+            if (lightInfo) {
+              //添加楼层信息标签
+              const infoDiv = document.createElement("div");
+
+              infoDiv.className = "infoTag";
+              infoDiv.innerHTML = `
+                  <div class="info-item">
+                  <span class="info-label">设备名称：</span><span>${object.name}</span>         
+                  </div>
+                  <div class="info-item">
+                  <span class="info-label">设备位置：</span><span>${lightInfo.eqPosition}</span>         
+                  </div>
+                  <div class="info-item">
+                  <span class="info-label">设备功率：</span><span>${lightInfo.eqPower}</span>
+                  </div>
+                  <div class="info-item">
+                  <span class="info-label">设备状态：</span><span>${lightInfo.eqState}</span>
+                </div>
+
+                  
+                  `;
+
+              const lightTag = new CSS2DObject(infoDiv);
+              lightTag.position.set(10, maxY + 15, 0);
+              this.lightInfoTags.push(lightTag);
+              object.add(lightTag);
+            }
           }
-        }
-      });
+        },
+        false
+      );
+
       //动画
       this.cityAnimations = gltf.animations;
 
@@ -410,7 +508,7 @@ class AddMesh {
 
     this.panel = new THREE.Mesh(panelGeometry, this.sunMaterial);
 
-    this.panel.position.set(5, -6, -10);
+    this.panel.position.set(3, -6, -10);
 
     CameraModule.activeCamera.add(this.panel);
   }
@@ -418,6 +516,132 @@ class AddMesh {
     this.infoTags.forEach((item) => {
       item.removeFromParent();
     });
+
+    this.lightInfoTags.forEach((item) => {
+      item.removeFromParent();
+    });
+    this.monitorInfoTags.forEach((item) => {
+      item.removeFromParent();
+    });
+  }
+  addPersons() {
+    this.personsTags = [];
+    let positions=[]
+    for (let i = 0; i < 30; i++) {
+      let randomX = Math.random() * (-287 - -638 + 1) + -638;
+      let randomZ = Math.random() * (-153 - -429 + 1) + -429;
+      let position = new THREE.Vector3(randomX, 0, randomZ);
+      positions.push(position)
+      const personDiv = document.createElement("div");
+      personDiv.className = "personTag";
+
+      window.showPersonWay =  (index)=> {
+        let pos=positions[index]
+        this.showPersonWay(pos,index)
+      };
+      window.clearPersonWay =  (index)=> {
+        this.clearPersonWay(index)
+      };
+      let objec2d = new CSS2DObject(personDiv);
+      const infoDiv = document.createElement("div");
+
+      infoDiv.className = "infoTag";
+      infoDiv.innerHTML = `
+          <div class="closeInfo">
+            <button onmousedown="window.clearPersonWay(${i})">X</button>
+          </div>
+          <div class="info-item">
+          <span class="info-label">姓名：</span><span>xxx${i}</span>         
+          </div>
+          <div class="info-item">
+          <span class="info-label">电话：</span><span>1234567</span>         
+          </div>
+          <div class="info-item">
+          <span class="info-label">进入事件：</span><span>2022-07-08 08:50:20</span>
+          </div>
+          <div class="info-item-btn">
+          <button type="button" class="confirm-btn" onmousedown=" window.showPersonWay(${i})">查看运动轨迹</button>
+        </div>
+
+          
+          `;
+      let infoObj = new CSS2DObject(infoDiv);
+      infoObj.position.set(0, 15, 0);
+      objec2d.position.set(position.x, position.y, position.z);
+      objec2d.visible = false;
+      objec2d.add(infoObj);
+      infoObj.visible = false;
+      personDiv.addEventListener(
+        "mousedown",
+        (event) => {
+          infoObj.visible = true;
+        },
+        false
+      );
+      this.personInfoObj.push(infoObj)
+      this.personsTags.push(objec2d);
+      this.scene.add(objec2d);
+    }
+    console.log(this.personsPosition);
+  }
+  showPersonWay(position,i) {
+    
+    let linePoints=[
+      new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
+      new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
+      new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
+      new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
+      new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
+
+      position
+    ]
+    //创建曲线
+    let lineCurve=new THREE.CatmullRomCurve3(linePoints)
+    let wayCubeGeometry=new THREE.TubeGeometry(lineCurve,100,0.4,5,false)
+    let texture=this.textureLoader.load('./textures/z_11.png')
+    texture.repeat.set(10,2)
+
+    texture.wrapS=THREE.RepeatWrapping
+    texture.wrapT=THREE.MirroredRepeatWrapping
+    let wayLineMaterial=new THREE.MeshBasicMaterial({
+      map:texture,
+      transparent:true
+    })
+   let wayLineMesh=new THREE.Mesh(wayCubeGeometry,wayLineMaterial)
+    wayLineMesh.position.set(0,10,0)
+    gsap.to(texture.offset,{
+      x:-5,
+      y:-5,
+      ease:'none',
+      repeat:-1,
+      duration:5
+    })
+    wayLineMesh.name=i
+    this.wayLines.push(wayLineMesh)
+
+    this.scene.add(wayLineMesh)
+
+
+  }
+  clearPersonWay(index){
+
+    this.personInfoObj[index].visible=false
+    let clearItem=this.wayLines.find((item)=>{
+      return item.name==index
+    })
+    if(clearItem){
+      clearItem.geometry.dispose()
+      clearItem.material.dispose()
+      clearItem.removeFromParent()
+    }
+        this.wayLines.forEach((item,i)=>{
+      if(item.name===index){
+
+        this.wayLines.splice(i,1)
+      }
+    })
+  
+
   }
 }
 export default AddMesh;

@@ -70,12 +70,12 @@
             <div class="handle-item" @click="toggleMonitor">
                 <img src="@/assets/icons/shexiangtou.svg" alt="">
             </div>
-            <div class="handle-item">
+            <div class="handle-item" @click="togglePersons">
                 <img src="@/assets/icons/kouzhao.svg" alt="">
             </div>
-            <div class="handle-item">
+            <!-- <div class="handle-item">
                 <img src="@/assets/icons/miehuoqi.svg" alt="">
-            </div>
+            </div> -->
             <div class="handle-item" @click="toggleLight">
                 <img src="@/assets/icons/ludeng.svg" alt="">
             </div>
@@ -144,7 +144,6 @@ let weather=reactive({name:null})
 onMounted(()=>{
   eventHub.on('getWeahter',(value)=>{
     weather.name=value
-    console.log(value)
   })
   eventHub.on('getHour',(value)=>{
     hour.count=parseInt(value)
@@ -159,6 +158,10 @@ const toggleMonitor=()=>{
 const toggleLight=()=>{
 
 eventHub.emit('toggleLight')
+}
+const togglePersons=()=>{
+eventHub.emit('togglePersons')
+
 }
 
 
@@ -247,8 +250,8 @@ eventHub.emit('toggleLight')
   main {
     .showhandles{
         position:fixed;
-        top:205px;
-        right:630px;
+        top:150px;
+        right:777px;
         z-index: 50;
         .button-item{
           background: rgba(0,0,0,0.5);
@@ -284,7 +287,7 @@ eventHub.emit('toggleLight')
   }
   footer {
     position: fixed;
-    left: 180px;
+    left: 50px;
     width: 100vw;
     bottom: 50px;
     display: flex;

@@ -3,6 +3,7 @@ import gsap from "gsap";
 import eventHub from "@/utils/eventHub";
 import rendererModule from "@/three/rendererModule";
 import animate from "./animate";
+import {throttled} from '../utils/utils'
 export default class SphereSky {
   constructor(radius, texture) {
     this.dayToNight = true;
@@ -45,9 +46,8 @@ export default class SphereSky {
             gl_FragColor=mix(vec4(0.0,0.0,0.0,1.0),gl_FragColor,1.0);
             `
       );
-      console.log(shader);
     };
-
+     let lastTime=Date.now()
     gsap.to(uTime, {
       value: 24,
       duration: 24,
@@ -55,8 +55,15 @@ export default class SphereSky {
       ease: "none",
       onUpdate: (time) => {
         if (this.dayToNight) {
-         
+          //节流
+          let currentTime=Date.now()
+
+          if(currentTime-lastTime>=1000){
             eventHub.emit('getHour',uTime.value)
+            lastTime=currentTime
+          }
+         
+           
           this.updateSun(uTime.value);
 
           if(Math.abs(uTime.value - 12) <= 6){
