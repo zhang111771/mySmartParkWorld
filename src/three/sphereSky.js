@@ -67,8 +67,8 @@ export default class SphereSky {
           this.updateSun(uTime.value);
 
           if(Math.abs(uTime.value - 12) <= 6){
-            let dayStrength=this.sun.position.y/1000          
-            rendererModule.renderer.toneMappingExposure =dayStrength<0.5?0.5:dayStrength 
+            let dayStrength=this.sun.position.y/1000*2          
+            rendererModule.renderer.toneMappingExposure =dayStrength<1?1:dayStrength 
           }
         }
       },

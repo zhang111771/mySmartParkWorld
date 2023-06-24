@@ -97,6 +97,9 @@ class AddMesh {
     //控制路灯开关
     eventHub.on("getHour", (hour) => {
       if (Math.abs(hour - 12) <= 6) {
+        this.sphereSky.mesh.material.map=this.dayTexture
+        this.scene.background =  this.dayTexture;
+        this.scene.environment =  this.dayTexture;
         this.meshLines.forEach((item) => {
           item.visible = false;
         });
@@ -107,6 +110,9 @@ class AddMesh {
           item.isMesh && (item.material.opacity = 1);
         });
       } else {
+        this.sphereSky.mesh.material.map=this.nightTexture
+        this.scene.background =  this.nightTexture;
+        this.scene.environment =  this.nightTexture;
         this.floors.forEach((item) => {
           item.isMesh && (item.material.opacity = 0.7);
         });
@@ -369,14 +375,21 @@ class AddMesh {
     this.rgbeLoader
       .loadAsync("./textures/hdr/cloud_sky.hdr")
       .then((texture) => {
-        const sphereSky = new SphereSky(1000, texture);
-        sphereSky.mesh.add(new THREE.AxesHelper(100));
-        sphereSky.mesh.position.set(-450, 0, 0);
+        this.dayTexture=texture
+        this. sphereSky = new SphereSky(1000, this.dayTexture);
+        this.sphereSky.mesh.add(new THREE.AxesHelper(100));
+        this.sphereSky.mesh.position.set(-450, 0, 0);
 
-        this.scene.add(sphereSky.mesh);
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        this.scene.background = texture;
-        this.scene.environment = texture;
+        this.scene.add(this.sphereSky.mesh);
+        this.dayTexture.mapping = THREE.EquirectangularReflectionMapping;
+        this.scene.background =  this.dayTexture;
+        this.scene.environment =  this.dayTexture;
+      });
+      this.rgbeLoader
+      .loadAsync("./textures/hdr/sky_night.hdr")
+      .then((texture) => {
+        this.nightTexture=texture
+ 
       });
   }
   addLight() {

@@ -6,6 +6,7 @@ class Renderer{
         this.renderer=new THREE.WebGLRenderer({antialias:true})
         this.renderer.setSize(window.innerWidth,window.innerHeight)
         this.renderer.shadowMap.enabled=true
+        this.renderer.outputENcoding=THREE.sRGBEncoding
         this.renderer.toneMapping=THREE.ACESFilmicToneMapping
         this.renderer.toneMappingExposure=1.5
         //css2drenderer
