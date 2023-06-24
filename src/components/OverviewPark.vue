@@ -61,7 +61,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label">办公租金：</span
-                ><span class="info-content">12元/m-20元/m/天</span>
+                ><span class="info-content">12元/m²-20元/m²/天</span>
               </div>
             </div>
           </div>

@@ -30,7 +30,6 @@ class AddMesh {
     this.dracoLoader.setDecoderPath("./draco/");
     this.gltfLoader.setDRACOLoader(this.dracoLoader);
     this.scene = sceneModule.scene;
-    this.addHelper();
     this.addCity();
     this.addSceneBackground();
     this.addLight();
@@ -377,7 +376,6 @@ class AddMesh {
       .then((texture) => {
         this.dayTexture=texture
         this. sphereSky = new SphereSky(1000, this.dayTexture);
-        this.sphereSky.mesh.add(new THREE.AxesHelper(100));
         this.sphereSky.mesh.position.set(-450, 0, 0);
 
         this.scene.add(this.sphereSky.mesh);
@@ -598,7 +596,12 @@ class AddMesh {
     console.log(this.personsPosition);
   }
   showPersonWay(position,i) {
-    
+    let hasOne=this.wayLines.find((item)=>{
+      return item.name===i
+    })
+    if(hasOne){
+      return
+    }
     let linePoints=[
       new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
       new THREE.Vector3(position.x+Math.random()*(400-(-400)+1)-400,0,position.z+Math.random()*(400-(-400)+1)-400),
