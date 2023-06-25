@@ -1,5 +1,17 @@
 <template>
   <div class="big-screen">
+    <div class="loading" v-if="barProgress!=100">
+      <div class="progress-container">
+        <img src="@/assets/icons/loading.svg" alt="" class="loading-icon">
+        <!-- <div class="progress-bar-outer">
+          <div class="progress-bar" :style="{width:barProgress+'%'}"></div>
+
+        </div> -->
+      </div>
+      
+      <div class="loading-bg"></div>
+      
+    </div>
     <header>
       <div class="block-container">
         <div class="block-item logo"><img src="" alt="" /> 智慧园区</div>
@@ -136,10 +148,11 @@
 <script setup>
 import OverviewPark from "./OverviewPark.vue";
 import eventHub from "@/utils/eventHub";
+import * as THREE from 'three'
 import { onBeforeMount, onMounted,reactive,ref } from "vue";
 let hour=reactive({count:0})
 let weather=reactive({name:null})
-
+let barProgress=ref(0)
 
 onMounted(()=>{
   eventHub.on('getWeahter',(value)=>{
@@ -148,6 +161,10 @@ onMounted(()=>{
   eventHub.on('getHour',(value)=>{
     hour.count=parseInt(value)
   })
+  THREE.DefaultLoadingManager.onProgress=(item,loaded,total)=>{
+    barProgress.value=loaded/total*100
+    console.log(item,barProgress.value)
+  }
   
 
 })
@@ -167,6 +184,60 @@ eventHub.emit('togglePersons')
 
 </script>
 <style lang='scss' scoped>
+.progress-container{
+  position:fixed;
+  z-index: 101;
+  top:50%;
+  left:50%;
+  transform: translateX(-50%) translateY(-50%);
+  text-align: center;
+}
+.progress-bar-outer{
+  width:300px;
+  height: 10px;
+  background: #062a6c;
+  .progress-bar{
+    height: 100%;
+    background: #efefef;
+  }
+}
+.loading-bg{
+  position: fixed;
+  z-index: 100;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background-image:url(../assets/imgs/bg.png) ;
+  filter: blur(50px);
+  background-size: cover;
+}
+@keyframes rotate{
+  0% {
+            transform: rotate(0);
+        }
+
+        25% {
+            transform: rotate(90deg);
+        }
+
+        50% {
+            transform: rotate(180deg);
+        }
+
+        75% {
+            transform: rotate(270deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+
+}
+.loading-icon{
+  animation: rotate 1.5s linear infinite;
+}
+
 .big-screen {
   header {
     display: flex;

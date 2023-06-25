@@ -67,6 +67,7 @@ class AddMesh {
     });
     //线框模型集合
     this.meshLines = [];
+
   }
   randomWeather() {
     const weatherArr = ["晴天", "雨天", "下雪", "有雾"];
@@ -381,6 +382,7 @@ class AddMesh {
       this.park = gltf.scene;
       this.scene.add(this.park);
     });
+  
   }
   addSceneBackground() {
     this.rgbeLoader = new RGBELoader();
