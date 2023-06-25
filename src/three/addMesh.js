@@ -213,7 +213,14 @@ class AddMesh {
           lightDiv.className = "lightTag";
           // lightDiv.innerHTML = child.name;
           const lightInfo = new CSS2DObject(lightDiv);
+      
           lightInfo.position.set(0, maxY + 5, 0);
+          gsap.to(lightInfo.position,{
+            y: maxY + 8,
+            duration:3,
+            repeat:-1,
+            yoyo:true
+          })
           lightInfo.visible = false;
           child.add(lightInfo);
           this.lightTags.push(lightInfo);
@@ -232,7 +239,13 @@ class AddMesh {
           monitorDiv.className = "monitorTag";
           // monitorDiv.innerHTML = child.name;
           const monitorInfo = new CSS2DObject(monitorDiv);
-          monitorInfo.position.set(0, maxY + 2, 0);
+          monitorInfo.position.set(0, maxY+1 , 0);
+          gsap.to(monitorInfo.position,{
+            y:1.5 ,
+            duration:3,
+            repeat:-1,
+            yoyo:true
+          })
           monitorInfo.visible = false;
           child.add(monitorInfo);
           this.monitorTags.push(monitorInfo);
@@ -579,6 +592,14 @@ class AddMesh {
       let infoObj = new CSS2DObject(infoDiv);
       infoObj.position.set(0, 15, 0);
       objec2d.position.set(position.x, position.y, position.z);
+      let delayTime=Math.random()
+      gsap.to(objec2d.position,{
+        delay:delayTime,
+        y:position.y+2,
+        duration:3,
+        repeat:-1,
+        yoyo:true
+      })
       objec2d.visible = false;
       objec2d.add(infoObj);
       infoObj.visible = false;
