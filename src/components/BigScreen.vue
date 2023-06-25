@@ -208,9 +208,8 @@ eventHub.emit('togglePersons')
   left:0;
   right:0;
   bottom:0;
-  background-image:url(../assets/imgs/bg.png) ;
-  filter: blur(50px);
-  background-size: cover;
+  background: rgba(0,0,0,0.8);
+
 }
 @keyframes rotate{
   0% {
